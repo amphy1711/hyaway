@@ -29,6 +29,11 @@ import {
 } from "@/integrations/hydrus-api/queries/manage-pages";
 import { useLatestOpenedPageActions } from "@/stores/latest-opened-page-store";
 
+import { useCallback } from "react";
+import { useSetRatingMutation } from "@/integrations/hydrus-api/queries/ratings";
+import { usePermissions } from "@/integrations/hydrus-api/queries/permissions";
+import { Permission, type RatingValue } from "@/integrations/hydrus-api/models";
+
 const PAGE_STATE_LABELS: Partial<Record<PageState, string>> = {
   [PageState.INITIALIZING]: "Initializing",
   [PageState.SEARCHING_LOADING]: "Searching",
@@ -88,6 +93,22 @@ function PageContent({
   );
   const refreshPageMutation = useRefreshPageMutation();
   const focusPageMutation = useFocusPageMutation();
+  const { mutate: setRating } = useSetRatingMutation();
+  const { hasPermission } = usePermissions();
+  const canEditRatings = hasPermission(Permission.EDIT_FILE_RATINGS);
+
+  const handleRatingToggle = useCallback(
+    (fileId: number, serviceKey: string, newValue: RatingValue) => {
+      if (!canEditRatings) return;
+
+      setRating({
+        file_id: fileId,
+        rating_service_key: serviceKey,
+        rating: newValue,
+      });
+    },
+    [canEditRatings, setRating],
+  );
   const queryClient = useQueryClient();
   const { setLatestOpenedPage } = useLatestOpenedPageActions();
   const pagePath = (
@@ -235,6 +256,7 @@ function PageContent({
               galleryView={galleryView}
               loadAll={shouldLoadAllMetadata}
               getFileLink={getFileLink}
+              onRatingToggle={canEditRatings ? handleRatingToggle : undefined}
             />
             <ThumbnailGalleryFloatingFooter
               leftContent={refetchButton}

@@ -20,7 +20,7 @@ import {
 } from "./thumbnail-gallery-load-more";
 import { ThumbnailGallerySkeleton } from "./thumbnail-gallery-skeleton";
 import type { FileLinkBuilder } from "./thumbnail-gallery-item";
-import type { FileMetadata } from "@/integrations/hydrus-api/models";
+import type { FileMetadata, RatingValue } from "@/integrations/hydrus-api/models";
 import type { useInfiniteGetFilesMetadata } from "@/integrations/hydrus-api/queries/manage-files";
 import type { ThumbnailGalleryView } from "./use-thumbnail-gallery-view";
 import { ScrollPositionBadge } from "@/components/scroll-position-badge";
@@ -56,16 +56,10 @@ export interface ThumbnailGalleryProps {
   sourceFileIds: Array<number>;
   metadataQuery: ReturnType<typeof useInfiniteGetFilesMetadata>;
   galleryView: ThumbnailGalleryView;
-  /** Fetch every metadata page as soon as possible instead of waiting for scroll proximity. */
   loadAll?: boolean;
-  /** Custom link builder for contextual navigation */
   getFileLink?: FileLinkBuilder;
-  /**
-   * When true, preserve the current window scroll on mount instead of
-   * restoring a previously saved one.
-   */
   preserveCurrentScroll?: boolean;
-  /** Accessible label for the gallery */
+  onRatingToggle?: (fileId: number, serviceKey: string, newValue: RatingValue) => void;
   "aria-label"?: string;
 }
 
@@ -76,6 +70,7 @@ export function ThumbnailGallery({
   loadAll,
   getFileLink,
   preserveCurrentScroll,
+  onRatingToggle,
   "aria-label": ariaLabel = "File gallery",
 }: ThumbnailGalleryProps) {
   const defaultDimensions = useThumbnailDimensions();
@@ -109,6 +104,7 @@ export function ThumbnailGallery({
       defaultDimensions={defaultDimensions}
       getFileLink={getFileLink}
       preserveCurrentScroll={preserveCurrentScroll}
+      onRatingToggle={onRatingToggle}
       aria-label={ariaLabel}
     />
   );
@@ -121,6 +117,7 @@ export function PureThumbnailGallery({
   defaultDimensions,
   getFileLink,
   preserveCurrentScroll,
+  onRatingToggle,
   "aria-label": ariaLabel,
 }: {
   metadataQuery: ReturnType<typeof useInfiniteGetFilesMetadata>;
@@ -129,6 +126,7 @@ export function PureThumbnailGallery({
   defaultDimensions: { width: number; height: number };
   getFileLink?: FileLinkBuilder;
   preserveCurrentScroll?: boolean;
+  onRatingToggle?: (fileId: number, serviceKey: string, newValue: RatingValue) => void;
   "aria-label"?: string;
 }) {
   const { isFetchingNextPage, fetchNextPage, hasNextPage } = metadataQuery;
@@ -388,6 +386,7 @@ export function PureThumbnailGallery({
                   setLinkRef={setLinkRef}
                   onItemFocus={handleItemFocus}
                   getFileLink={getFileLink}
+                  onRatingToggle={onRatingToggle}
                 />
               );
             })}

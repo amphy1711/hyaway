@@ -74,7 +74,7 @@ export function ThumbnailGalleryItemContent({
             loading={imageLoading}
           />
         )}
-        <ThumbnailRatingsOverlay item={item} />
+        {/* <ThumbnailRatingsOverlay item={item} /> */}
       </div>
       {showFooter && <ThumbnailGalleryItemFooter item={item} />}
     </div>
