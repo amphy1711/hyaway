@@ -82,7 +82,7 @@ function RatingBarIcon({
       type="button"
       onClick={handleClick}
       className={cn(
-        "pointer-events-auto flex size-10 py-1 px-2 items-center justify-center rounded transition-transform",
+        "pointer-events-auto flex size-8.5 px-2 items-center justify-center rounded transition-transform",
         "hover:scale-125 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
       )}
       aria-pressed={isFilled}
@@ -118,7 +118,7 @@ export function ThumbnailGalleryItemRatingBar({
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-full z-20 flex items-center justify-end px-1 bg-black/20 -mb-10",
+        "pointer-events-none absolute inset-x-0 bottom-full z-20 flex items-center justify-end px-1 bg-black/20 -mb-8",
         className,
       )}
     >
