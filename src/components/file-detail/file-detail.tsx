@@ -127,9 +127,9 @@ function FileDetailContent({
         <div className="relative -mx-4 sm:-mx-6">
           <FileViewer data={data} />
           {/* Ratings overlay on file viewer */}
-          <div className="pointer-events-none absolute top-2 right-2 z-10 sm:top-3 sm:right-3">
+          {/* <div className="pointer-events-none absolute top-2 right-2 z-10 sm:top-3 sm:right-3">
             <RatingsOverlay item={data} size="lg" />
-          </div>
+          </div> */}
         </div>
         <FilePageHeader fileId={fileId} />
         <Separator className="my-2" />

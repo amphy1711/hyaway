@@ -82,7 +82,7 @@ function RatingBarIcon({
       type="button"
       onClick={handleClick}
       className={cn(
-        "pointer-events-auto flex size-6 items-center justify-center rounded transition-transform",
+        "pointer-events-auto flex size-6 p-1 items-center justify-center rounded transition-transform",
         "hover:scale-125 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
       )}
       aria-pressed={isFilled}
@@ -91,13 +91,13 @@ function RatingBarIcon({
       {isFilled ? (
         <FilledIcon
           aria-hidden
-          className={cn("size-4", shapeClassName)}
+          className={cn("size-6", shapeClassName)}
           style={{ color: colors.brush, stroke: colors.pen }}
         />
       ) : (
         <OutlineIcon
           aria-hidden
-          className={cn("size-4 text-white/80 drop-shadow", shapeClassName)}
+          className={cn("size-6 text-white/80 drop-shadow", shapeClassName)}
         />
       )}
     </button>
@@ -118,7 +118,7 @@ export function ThumbnailGalleryItemRatingBar({
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-full z-20 flex items-center justify-end gap-2 px-1 py-0.5 bg-black/20 -mb-7",
+        "pointer-events-none absolute inset-x-0 bottom-full z-20 flex items-center justify-end px-1 py-1 bg-black/20 -mb-7.5",
         className,
       )}
     >
