@@ -185,7 +185,7 @@ export function ThumbnailGalleryItemRatingBar({
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 top-full -mt-15 z-20 flex items-center justify-between gap-2 bg-black/20 px-1",
+        "pointer-events-none absolute inset-x-0 top-full -mt-14.5 z-20 flex items-center justify-between gap-2 bg-black/20 px-1",
         className,
       )}
     >
