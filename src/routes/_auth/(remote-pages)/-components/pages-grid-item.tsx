@@ -18,8 +18,8 @@ import { Skeleton } from "@/components/ui-primitives/skeleton";
 import { Spinner } from "@/components/ui-primitives/spinner";
 import { cn } from "@/lib/utils";
 import {
-  DEFAULT_PAGE_CARD_WIDTH,
-  PAGE_CARD_ASPECT_RATIO,
+  // DEFAULT_PAGE_CARD_WIDTH,
+  // PAGE_CARD_ASPECT_RATIO,
   usePagesUseFriendlyUrls,
 } from "@/stores/pages-settings-store";
 
@@ -32,14 +32,11 @@ const PAGE_STATE_LABELS: Partial<Record<PageState, string>> = {
 export interface PagesGridItemProps {
   pageKey: string;
   pageName: string;
-  /** URL-friendly slug for the page link */
   pageSlug: string;
   index: number;
   className?: string;
   tabIndex?: number;
-  /** Stable callback to register link refs - receives (element, index) */
   setLinkRef?: (el: HTMLAnchorElement | null, index: number) => void;
-  /** Stable callback for focus events - receives index */
   onItemFocus?: (index: number) => void;
   labelRef?: (el: HTMLSpanElement | null) => void;
   getGroupLabelRef?: (index: number) => (el: HTMLSpanElement | null) => void;
@@ -48,11 +45,9 @@ export interface PagesGridItemProps {
   groupLabel?: string;
   groupStripeColorsByLevel?: Array<string | null>;
   badgeLabel?: string;
+  cardHeight?: number;
 }
 
-/**
- * Pages grid item component that shows page name and thumbnail previews
- */
 export const PagesGridItem = memo(function PagesGridItemMemo({
   pageKey,
   pageName,
@@ -79,7 +74,6 @@ export const PagesGridItem = memo(function PagesGridItemMemo({
   const pageState = data?.page_info.page_state;
   const pageStateLabel = pageState ? PAGE_STATE_LABELS[pageState] : undefined;
 
-  // Use slug if friendly URLs enabled, otherwise use full page_key
   const linkPageId = useFriendlyUrls ? pageSlug : pageKey;
   const previewAspectClass = "aspect-square";
 
@@ -87,19 +81,15 @@ export const PagesGridItem = memo(function PagesGridItemMemo({
     ? getVisibleFileIds(data.page_info.media.hash_ids, data)
     : [];
   const totalFiles = visibleFileIds.length;
-  // Show all 4 thumbnails if 4 or fewer visible files, otherwise show 3 + count card
-  const showCountCard = totalFiles > 4;
-  const maxThumbnails = showCountCard ? 3 : 4;
-  const remainingFiles = Math.max(totalFiles - 3, 0);
+  // Immer maximal 4 Vorschaubilder zeigen, der Zähler wandert jetzt in die
+  // Pfad-Zeile statt eine Bildkachel zu belegen.
+  const maxThumbnails = 4;
+  const remainingFiles = Math.max(totalFiles - maxThumbnails, 0);
   const previewFileIds = visibleFileIds.slice(0, maxThumbnails);
-  const totalSlots = 4;
-  const filledSlots = previewFileIds.length + (showCountCard ? 1 : 0);
-  const emptySlots = Math.max(0, totalSlots - filledSlots);
+  const emptySlots = Math.max(0, maxThumbnails - previewFileIds.length);
 
   return (
     <Item
-      variant="muted"
-      size="xs"
       render={
         <Link
           ref={(el) => setLinkRef?.(el, index)}
@@ -110,40 +100,25 @@ export const PagesGridItem = memo(function PagesGridItemMemo({
           onFocus={() => onItemFocus?.(index)}
         />
       }
-      className={cn(
-        "relative flex h-full flex-col flex-nowrap items-stretch",
-        className,
-      )}
+      variant="muted"
+      size="xs"
+      className={cn("relative flex h-full flex-col flex-nowrap items-stretch", className)}
     >
       {badgeLabel ? (
-        <span className="bg-primary text-primary-foreground absolute top-0 right-0 z-10 max-w-[calc(100%-1.5rem)] px-2 py-1 text-xs/4 font-medium shadow-xs">
+        <span className="absolute top-1.5 right-1.5 z-10 rounded-full bg-primary/80 px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
           {badgeLabel}
         </span>
       ) : null}
-      {activeStripeColors.length > 0 ? (
-        <div className="absolute inset-x-1.5 bottom-0 flex gap-1">
-          {activeStripeColors.map((color, colorIndex) => (
-            <span
-              key={`${color}-${colorIndex}`}
-              className="h-1 w-full rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      ) : null}
-      <ItemContent className="min-h-0 flex-1">
-        {isLoading ? (
-          <div
-            className={cn(
-              "text-muted-foreground flex flex-col items-center justify-center gap-2 rounded border border-dashed text-center text-sm",
-              previewAspectClass,
-            )}
-            aria-label="Loading page preview"
-          >
-            <Spinner className="size-5" />
-            <span>Loading…</span>
+
+      {/* Bildvorschau-Grid: nimmt jetzt immer 4 volle Bildkacheln ein, kein "+N"-Feld mehr hier */}
+      {isLoading ? (
+        <ItemContent>
+          <div className="flex aspect-square items-center justify-center text-muted-foreground text-xs">
+            Loading…
           </div>
-        ) : previewFileIds.length > 0 ? (
+        </ItemContent>
+      ) : previewFileIds.length > 0 ? (
+        <ItemContent>
           <div
             className="grid grid-cols-2 gap-2"
             role="img"
@@ -152,73 +127,71 @@ export const PagesGridItem = memo(function PagesGridItemMemo({
             {previewFileIds.map((fileId) => (
               <div
                 key={fileId}
-                className="bg-muted aspect-square overflow-hidden rounded"
+                className={cn("bg-muted overflow-hidden rounded", previewAspectClass)}
               >
-                <ThumbnailImage fileId={fileId} />
+                <ThumbnailImage fileId={fileId} className="h-full w-full object-cover" />
               </div>
             ))}
-            {/* Show +N count card when more than 2/4 files */}
-            {showCountCard && (
-              <div
-                className="bg-primary/80 text-primary-foreground flex aspect-square items-center justify-center rounded text-sm font-medium"
-                aria-label={`${remainingFiles} more files`}
-              >
-                +{remainingFiles}
-              </div>
-            )}
-            {/* Fill empty slots to maintain 2x2 grid */}
             {Array.from({ length: emptySlots }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="aspect-square rounded border border-dashed bg-transparent"
-                aria-hidden="true"
+                className={cn("bg-muted/40 rounded", previewAspectClass)}
               />
             ))}
           </div>
-        ) : pageStateLabel ? (
-          <div
-            className={cn(
-              "text-muted-foreground flex flex-col items-center justify-center gap-2 rounded border border-dashed text-center text-sm",
-              previewAspectClass,
-            )}
-            aria-label={pageStateLabel}
-          >
-            {pageState !== PageState.SEARCH_CANCELLED && (
-              <Spinner className="size-5" />
-            )}
-            <span>{pageStateLabel}</span>
+        </ItemContent>
+      ) : pageStateLabel ? (
+        <ItemContent>
+          <div className="flex aspect-square flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+            {pageState !== PageState.SEARCH_CANCELLED && <Spinner className="size-4" />}
+            {pageStateLabel}
           </div>
-        ) : (
-          <div
-            className={cn(
-              "text-muted-foreground flex items-center justify-center rounded border border-dashed text-sm",
-              previewAspectClass,
-            )}
-          >
-            {data
-              ? formatHiddenFileCount(getHiddenFileCount(data)) || "No files"
-              : "No files"}
+        </ItemContent>
+      ) : (
+        <ItemContent>
+          <div className="flex aspect-square items-center justify-center text-muted-foreground text-xs">
+            {data ? formatHiddenFileCount(getHiddenFileCount(data)) || "No files" : "No files"}
           </div>
-        )}
-      </ItemContent>
-      <ItemTitle className="mt-auto block w-full min-w-0 text-sm/5 wrap-break-word">
-        <div
-          className="flex flex-col gap-0.5 rounded-lg bg-transparent px-1 py-1 backdrop-blur-3xl supports-backdrop-filter:bg-transparent"
-          title={groupLabel ? `${groupLabel} / ${pageName}` : pageName}
+        </ItemContent>
+      )}
+
+      {remainingFiles > 0 && (
+        <span
+          className="shrink-0 self-end w-max bg-primary/80 px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground -mt-6"
+          aria-label={`${remainingFiles} more files`}
         >
-          {groupLabel ? (
-            <PageGroupPath
-              groupLabel={groupLabel}
-              stripeColorsByLevel={groupStripeColorsByLevel}
-              className="text-foreground line-clamp-1"
-              getGroupLabelRef={getGroupLabelRef}
-              highlightQuery={highlightQuery}
-              useCustomHighlight={useCustomHighlight}
+          +{remainingFiles}
+        </span>
+      )}
+
+
+      {/* Gruppen-Streifen: bleiben als schmale Linie zwischen Bildern und Pfad-Zeile */}
+      {activeStripeColors.length > 0 && (
+        <div className="flex gap-1 px-0.5">
+          {activeStripeColors.map((color, colorIndex) => (
+            <span
+              key={colorIndex}
+              className="h-1 w-full rounded-full"
+              style={{ backgroundColor: color }}
             />
-          ) : null}
+          ))}
+        </div>
+      )}
+
+      {/* Titel- und Pfadbereich: liegt jetzt unter den Bildern statt darüber, kein Blur mehr */}
+      <ItemTitle className="mt-auto block w-full min-w-0 items-center gap-2 text-sm/5 wrap-break-word">
+        <div className="flex flex-col gap-0.5 rounded-lg bg-transparent px-1 py-1">
+          <PageGroupPath
+            groupLabel={groupLabel}
+            stripeColorsByLevel={groupStripeColorsByLevel}
+            highlightQuery={highlightQuery}
+            useCustomHighlight={useCustomHighlight}
+            getGroupLabelRef={getGroupLabelRef}
+            className="min-w-0 flex-1"
+          />
           <span
             ref={labelRef}
-            className="line-clamp-2 block min-h-10 break-all"
+            className="line-clamp-2 block min-h-5 break-all"
           >
             <HighlightedText
               text={pageName}
@@ -232,9 +205,6 @@ export const PagesGridItem = memo(function PagesGridItemMemo({
   );
 });
 
-/**
- * Skeleton placeholder for PagesGridItem during loading state
- */
 export function PagesGridItemSkeleton({
   className,
   width,
@@ -245,25 +215,16 @@ export function PagesGridItemSkeleton({
   height?: number;
 }) {
   return (
-    <Item
-      variant="muted"
-      className={cn("block", className)}
-      style={{
-        width: width ? `${width}px` : `${DEFAULT_PAGE_CARD_WIDTH}px`,
-        height: height
-          ? `${height}px`
-          : `${DEFAULT_PAGE_CARD_WIDTH * PAGE_CARD_ASPECT_RATIO}px`,
-      }}
+    <div
+      className={cn("relative flex flex-col gap-2.5 rounded-2xl border border-transparent bg-muted/50 p-2.5", className)}
+      style={{ width, height }}
     >
-      <ItemContent className="min-h-0 flex-1 pb-2">
-        <div className="grid grid-cols-2 gap-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={`skeleton-${i}`} className="aspect-square rounded" />
-          ))}
-        </div>
-      </ItemContent>
-      <Skeleton className="mb-1 h-3 w-1/2" />
-      <Skeleton className="h-5 w-3/4" />
-    </Item>
+      <div className="grid grid-cols-2 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square rounded" />
+        ))}
+      </div>
+      <Skeleton className="h-8 w-full rounded-lg" />
+    </div>
   );
 }

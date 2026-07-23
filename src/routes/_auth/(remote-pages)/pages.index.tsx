@@ -72,7 +72,6 @@ function createPageGridEntries(
   latestPage: MediaPage | null,
 ): Array<PagesGridEntry> {
   const entries: Array<PagesGridEntry> = [];
-
   if (latestPage) {
     entries.push({
       id: `latest-opened-${latestPage.page_key}`,
@@ -80,15 +79,9 @@ function createPageGridEntries(
       isLatestCard: true,
     });
   }
-
   for (const page of pages) {
-    entries.push({
-      id: page.page_key,
-      page,
-      isLatestCard: false,
-    });
+    entries.push({ id: page.page_key, page, isLatestCard: false });
   }
-
   return entries;
 }
 
@@ -314,13 +307,9 @@ function PagesGrid({
   >;
 }) {
   const showScrollBadge = usePagesShowScrollBadge();
-  const {
-    lanes,
-    effectiveCardWidth,
-    effectiveCardHeight,
-    horizontalGap,
-    verticalGap,
-  } = gridConfig;
+  const { lanes, effectiveCardWidth, effectiveCardHeight, horizontalGap, verticalGap } =
+    gridConfig;
+
   const getItemKey = useCallback(
     (index: number) => entries[index].id,
     [entries],
@@ -329,17 +318,20 @@ function PagesGrid({
   const rowVirtualizer = useWindowVirtualizer({
     count: entries.length,
     getItemKey,
-    estimateSize: () => effectiveCardHeight,
+    // Basis-Schätzwert, bevor die Kachel gemessen wurde – measureElement
+    // ersetzt diesen Wert danach durch die echte Höhe.
+    estimateSize: () => effectiveCardHeight + 60,
     overscan: 4,
     gap: verticalGap,
     lanes,
     scrollMargin: containerRef.current?.offsetTop ?? 0,
   });
 
-  // Force remeasurement when card dimensions change
+  // Erzwingt eine Neumessung, wenn sich Kartenbreite/Lanes ändern,
+  // da sich dadurch auch der Pfad-Zeilenumbruch ändern kann.
   useLayoutEffect(() => {
     rowVirtualizer.measure();
-  }, [effectiveCardHeight, verticalGap, lanes, rowVirtualizer]);
+  }, [effectiveCardWidth, effectiveCardHeight, verticalGap, lanes, rowVirtualizer]);
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const lastItemIndex = virtualItems.at(-1)?.index;
@@ -358,13 +350,11 @@ function PagesGrid({
   );
 
   return (
-    <div className="@container w-full">
+    <div className="container w-full">
       <ul
         role="grid"
         onKeyDown={handleKeyDown}
-        style={{
-          height: `${rowVirtualizer.getTotalSize()}px`,
-        }}
+        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
         className="relative w-full"
       >
         {lanes > 0 &&
@@ -376,16 +366,16 @@ function PagesGrid({
               : page.page_key;
             const groupMeta = groupMetaByPageKey.get(page.page_key);
             const groupLabel = groupMeta?.label ?? "";
-            const groupStripeColorsByLevel =
-              groupMeta?.stripeColorsByLevel ?? [];
+            const groupStripeColorsByLevel = groupMeta?.stripeColorsByLevel ?? [];
 
             return (
               <li
                 key={virtualRow.key}
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualRow.index}
                 className="absolute top-0 left-0"
                 style={{
                   width: `${effectiveCardWidth}px`,
-                  height: `${effectiveCardHeight}px`,
                   transform: `translate(${virtualRow.lane * (effectiveCardWidth + horizontalGap)}px, ${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
                 }}
               >
@@ -394,9 +384,7 @@ function PagesGrid({
                   pageName={page.name}
                   pageSlug={page.slug}
                   index={virtualRow.index}
-                  className={
-                    entry.isLatestCard ? "bg-primary/5 shadow-sm" : undefined
-                  }
+                  className={entry.isLatestCard ? "bg-primary/5 shadow-sm" : undefined}
                   badgeLabel={entry.isLatestCard ? "Last opened" : undefined}
                   tabIndex={getTabIndex(virtualRow.index, visibleIndices)}
                   setLinkRef={setLinkRef}
@@ -409,6 +397,7 @@ function PagesGrid({
                   useCustomHighlight={useCustomHighlight}
                   groupLabel={groupLabel}
                   groupStripeColorsByLevel={groupStripeColorsByLevel}
+                  cardHeight={effectiveCardHeight}
                 />
               </li>
             );
